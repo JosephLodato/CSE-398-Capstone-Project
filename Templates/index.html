@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Feed with Snapshot</title>
+    <script>
+        function takeSnapshot() {
+            const snapshotImg = document.getElementById("snapshotImage");
+            const timestamp = new Date().getTime();
+            snapshotImg.src = "/snapshot?" + timestamp;
+        }
+    </script>
+</head>
+<body>
+    <h1>Webcam Live Feed</h1>
+    <img src="{{ url_for('video_feed') }}" width="640" height="480" />
+
+    <h2>Take Snapshot</h2>
+    <button onclick="takeSnapshot()">Capture Snapshot</button>
+
+    <h2>Processed Snapshot</h2>
+    <img id="snapshotImage" src="" width="640" height="480" alt="Snapshot will appear here after capture" />
+</body>
+</html>
