@@ -56,6 +56,6 @@ finally:
 def moveXAxis():
     print("placeholder")
 
-# X cords: [0, ]
-# Y cords: [0, ]
+# X cords: [0, 480]
+# Y cords: [0, 640]
 # make funct to move X Motors n steps in xy
