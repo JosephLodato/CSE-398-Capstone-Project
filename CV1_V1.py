@@ -1,62 +1,48 @@
 import cv2
 import numpy as np
-from flask import Flask, Response, render_template, send_file
 from skimage.morphology import skeletonize
-import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+import io
+from PIL import Image
 
-app = Flask(__name__)
-cap = cv2.VideoCapture(1)  # Use 0 for built-in webcam, 1 for external
+# --- Camera Setup ---
+cap = cv2.VideoCapture(1)
+if not cap.isOpened():
+    print("Camera not available")
+    exit()
 
-# Initialize a dummy frame to avoid None errors
-last_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+# --- UI Settings ---
+BUTTON_WIDTH = 150
+DISPLAY_SIZE = 480  # Square display (480x480)
+WINDOW_NAME = "Skeleton Camera"
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# --- Button Area (x1, y1, x2, y2) ---
+button_coords = (DISPLAY_SIZE + 10, 200, DISPLAY_SIZE + BUTTON_WIDTH - 10, 280)
+button_clicked = False
 
-def generate_frames():
-    global last_frame
-    while True:
-        success, frame = cap.read()
-        if not success:
-            continue
-        last_frame = frame.copy()
+# --- Mouse Callback ---
+def mouse_callback(event, x, y, flags, param):
+    global button_clicked
+    if event == cv2.EVENT_LBUTTONDOWN:
+        x1, y1, x2, y2 = button_coords
+        if x1 <= x <= x2 and y1 <= y <= y2:
+            button_clicked = True
 
-        # Get the actual frame dimensions
-        height, width = frame.shape[:2]
+cv2.namedWindow(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+cv2.setMouseCallback(WINDOW_NAME, mouse_callback)
 
-        # Draw resolution info on the frame
-        text = f'Resolution: {width}x{height}'
-        cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 2, cv2.LINE_AA)
-
-        _, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/snapshot')
-def snapshot():
-    global last_frame
-
-    # Convert to grayscale and binary
-    gray = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY)
+# --- Skeleton Plot Helper ---
+def generate_skeleton_plot(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
     binary_bool = binary > 0
     skeleton = skeletonize(binary_bool).astype(np.uint8) * 255
 
-    # Find contours
     contours, _ = cv2.findContours(skeleton, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
-    # Plot using object-oriented matplotlib
-    fig = Figure(figsize=(8, 8))
+    fig = Figure(figsize=(5, 5), dpi=100)
     ax = fig.add_subplot(1, 1, 1)
 
     for contour in contours:
@@ -65,24 +51,58 @@ def snapshot():
             xs, ys = zip(*coords)
             ax.plot(xs, ys, marker='.', linestyle='-', linewidth=0.5)
 
-    ax.set_title("Skeleton Contours from Snapshot")
+    ax.set_title("Skeleton Contours")
     ax.invert_yaxis()
     ax.axis('equal')
     ax.grid(True)
 
-    buf = io.BytesIO()
     canvas = FigureCanvas(fig)
+    buf = io.BytesIO()
     canvas.print_png(buf)
     buf.seek(0)
+    img_pil = Image.open(buf).convert('RGB')
+    img_np = np.array(img_pil)
+    return cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
-    return send_file(buf, mimetype='image/png', download_name='snapshot.png')
+# --- Main Loop ---
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        continue
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-@app.route('/resolution')
-def resolution():
-    if cap.isOpened():
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        return {"max_x": width - 1, "max_y": height - 1}
-    return {"error": "Camera not available"}
+    # Crop center square
+    h, w = frame.shape[:2]
+    min_dim = min(h, w)
+    cx, cy = w // 2, h // 2
+    square_frame = frame[cy - min_dim//2:cy + min_dim//2, cx - min_dim//2:cx + min_dim//2]
+    square_frame = cv2.resize(square_frame, (DISPLAY_SIZE, DISPLAY_SIZE))
+
+    # Create canvas: square display + button
+    canvas_width = DISPLAY_SIZE + BUTTON_WIDTH
+    canvas = np.ones((DISPLAY_SIZE, canvas_width, 3), dtype=np.uint8) * 50
+    canvas[:, :DISPLAY_SIZE] = square_frame
+
+    # Draw button
+    x1, y1, x2, y2 = button_coords
+    cv2.rectangle(canvas, (x1, y1), (x2, y2), (200, 200, 200), -1)
+    cv2.putText(canvas, "Snapshot", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_SIMPLEX,
+                0.8, (0, 0, 0), 2)
+
+    cv2.imshow(WINDOW_NAME, canvas)
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        break
+
+    if button_clicked:
+        plot_img = generate_skeleton_plot(square_frame)
+
+        # Just show the result, no saving
+        cv2.imshow("Skeleton Plot", plot_img)
+        cv2.waitKey(3000)
+        cv2.destroyWindow("Skeleton Plot")
+
+        button_clicked = False
+
+cap.release()
+cv2.destroyAllWindows()
