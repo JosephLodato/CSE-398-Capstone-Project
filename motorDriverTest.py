@@ -74,20 +74,20 @@ def main():
         moveX(100, direction=1)
         time.sleep(1)
 
-    print("Moving Y forward 50 steps")
-    moveY(50, direction=1)
-    time.sleep(1)
+        print("Moving Y forward 50 steps")
+        moveY(50, direction=1)
+        time.sleep(1)
 
-    print("Moving X back")
-    moveX(100, direction=0)
-    time.sleep(1)
+        print("Moving X back")
+        moveX(100, direction=0)
+        time.sleep(1)
 
-    print("Moving Y back")
-    moveY(50, direction=0)
-    time.sleep(1)
+        print("Moving Y back")
+        moveY(50, direction=0)
+        time.sleep(1)
 
-except KeyboardInterrupt:
-    print("Motion interrupted by user")
+    except KeyboardInterrupt:
+        print("Motion interrupted by user")
 
     finally:
         motorX1.cleanup()
