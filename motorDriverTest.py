@@ -89,8 +89,6 @@ def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
             motorY.pulse(delay)
             y_progress += y_ratio
 
-if __name__ == '__main__':
-    main()
 
 # Initialize motors
 motorX1 = StepperMotor("gpiochip4", 20, 21, 22, 23, 24, name="X1")
@@ -102,32 +100,31 @@ motorY = StepperMotor("gpiochip4", 5, 6, 7, 8, 9, name="Y")
 
 
 
-def main():
-    # Example usage
-    print("Starting motor test...")
+# Example usage
+print("Starting motor test...")
 
-    # Move motors in a sequence
-    try:
-        print("Moving X forward 100 steps")
-        moveX(100, direction=1)
-        time.sleep(1)
+# Move motors in a sequence
+try:
+    print("Moving X forward 100 steps")
+    moveX(100, direction=1)
+    time.sleep(1)
 
-        print("Moving Y forward 50 steps")
-        moveY(50, direction=1)
-        time.sleep(1)
+    print("Moving Y forward 50 steps")
+    moveY(50, direction=1)
+    time.sleep(1)
 
-        print("Moving X back")
-        moveX(100, direction=0)
-        time.sleep(1)
+    print("Moving X back")
+    moveX(100, direction=0)
+    time.sleep(1)
 
-        print("Moving Y back")
-        moveY(50, direction=0)
-        time.sleep(1)
+    print("Moving Y back")
+    moveY(50, direction=0)
+    time.sleep(1)
 
-    except KeyboardInterrupt:
-        print("Motion interrupted by user")
+except KeyboardInterrupt:
+    print("Motion interrupted by user")
 
-    finally:
-        motorX1.cleanup()
-        motorX2.cleanup()
-        motorY.cleanup()
+finally:
+    motorX1.cleanup()
+    motorX2.cleanup()
+    motorY.cleanup()
