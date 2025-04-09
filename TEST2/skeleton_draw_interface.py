@@ -170,8 +170,19 @@ try:
 
         if button_clicked:
             contours = get_skeleton_coords(square_frame)
+
+            # Print the coordinates
+            print("\n--- Contour Coordinates ---")
+            for i, contour in enumerate(contours):
+                print(f"Contour {i+1}: {len(contour)} points")
+                for pt in contour:
+                    print(f"  ({pt[0]}, {pt[1]})")
+            print("--- End of Coordinates ---\n")
+
+            # Draw with motors
             draw_contours_with_motors(contours)
             button_clicked = False
+
 
 finally:
     cap.release()
