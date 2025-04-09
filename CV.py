@@ -7,7 +7,7 @@ import io
 from PIL import Image
 
 # --- Camera Setup ---
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("Camera not available")
     exit()
