@@ -89,7 +89,7 @@ def cleanup_motors():
 # --- Skeleton Processing and Plotting ---
 def generate_skeleton_plot(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    _, binary = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     binary_bool = binary > 0
     skeleton = skeletonize(binary_bool).astype(np.uint8) * 255
 
