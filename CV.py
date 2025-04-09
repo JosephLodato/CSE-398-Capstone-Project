@@ -5,6 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import io
 from PIL import Image
+from motor_control import move_to_coordinate
 
 # --- Camera Setup ---
 cap = cv2.VideoCapture(1)

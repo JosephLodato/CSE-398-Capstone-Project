@@ -11,7 +11,7 @@ class StepperMotor:
 
     def set_direction(self, direction):
         values = self.lines.get_values()
-        values[0] = direction  # Set DIR
+        values[0] = direction  # DIR
         self.lines.set_values(values)
 
     def pulse(self, delay=0.001):
@@ -27,7 +27,7 @@ class StepperMotor:
         self.lines.release()
         self.chip.close()
 
-# Initialize motors (Only DIR and STEP pins needed now)
+# Initialize motors
 motorX1 = StepperMotor("gpiochip4", 20, 21, name="X1")
 motorX2 = StepperMotor("gpiochip4", 25, 26, name="X2")
 motorY = StepperMotor("gpiochip4", 5, 6, name="Y")
@@ -65,34 +65,7 @@ def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
             motorY.pulse(delay)
             y_progress += y_ratio
 
-def main():
-    print("Starting motor test...")
-
-    # Move motors in a sequence
-    try:
-        print("Moving X forward 100 steps")
-        moveX(100, direction=1)
-        time.sleep(1)
-
-        print("Moving Y forward 50 steps")
-        moveY(50, direction=1)
-        time.sleep(1)
-
-        print("Moving X back")
-        moveX(100, direction=0)
-        time.sleep(1)
-
-        print("Moving Y back")
-        moveY(50, direction=0)
-        time.sleep(1)
-
-    except KeyboardInterrupt:
-        print("Motion interrupted by user")
-
-    finally:
-        motorX1.cleanup()
-        motorX2.cleanup()
-        motorY.cleanup()
-
-if __name__ == '__main__':
-    main()
+def cleanup_all():
+    motorX1.cleanup()
+    motorX2.cleanup()
+    motorY.cleanup()
