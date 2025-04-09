@@ -3,6 +3,10 @@ import numpy as np
 from skimage.morphology import skeletonize
 import gpiod
 import time
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+import io
+from PIL import Image
 
 # --- Motor Setup ---
 MICROSTEPPING_MODE = "FULL"
@@ -82,8 +86,8 @@ def cleanup_motors():
     motorX2.cleanup()
     motorY.cleanup()
 
-# --- Skeleton Processing ---
-def get_skeleton_coords(frame):
+# --- Skeleton Processing and Plotting ---
+def generate_skeleton_plot(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
     binary_bool = binary > 0
@@ -91,13 +95,31 @@ def get_skeleton_coords(frame):
 
     contours, _ = cv2.findContours(skeleton, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
+    fig = Figure(figsize=(5, 5), dpi=100)
+    ax = fig.add_subplot(1, 1, 1)
+
     all_coords = []
     for contour in contours:
         coords = contour.reshape(-1, 2)
         if len(coords) > 1:
             all_coords.append(coords.tolist())
+            xs, ys = zip(*coords)
+            ax.plot(xs, ys, marker='.', linestyle='-', linewidth=0.5)
 
-    return all_coords
+    ax.set_title("Skeleton Contours")
+    ax.invert_yaxis()
+    ax.axis('equal')
+    ax.grid(True)
+
+    canvas = FigureCanvas(fig)
+    buf = io.BytesIO()
+    canvas.print_png(buf)
+    buf.seek(0)
+    img_pil = Image.open(buf).convert('RGB')
+    img_np = np.array(img_pil)
+    plot_img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+    return plot_img, all_coords
 
 STEPS_PER_PIXEL = 1  # Change this for scaling output
 
@@ -169,9 +191,14 @@ try:
             break
 
         if button_clicked:
-            contours = get_skeleton_coords(square_frame)
+            plot_img, contours = generate_skeleton_plot(square_frame)
 
-            # Print the coordinates
+            # Show the contour plot
+            cv2.imshow("Skeleton Plot", plot_img)
+            cv2.waitKey(3000)
+            cv2.destroyWindow("Skeleton Plot")
+
+            # Print coordinates
             print("\n--- Contour Coordinates ---")
             for i, contour in enumerate(contours):
                 print(f"Contour {i+1}: {len(contour)} points")
@@ -179,10 +206,10 @@ try:
                     print(f"  ({pt[0]}, {pt[1]})")
             print("--- End of Coordinates ---\n")
 
-            # Draw with motors
+            # Move motors
             draw_contours_with_motors(contours)
-            button_clicked = False
 
+            button_clicked = False
 
 finally:
     cap.release()
