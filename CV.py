@@ -7,7 +7,7 @@ import io
 from PIL import Image
 
 # --- Camera Setup ---
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("Camera not available")
     exit()
@@ -16,7 +16,6 @@ if not cap.isOpened():
 BUTTON_WIDTH = 150
 DISPLAY_SIZE = 480  # Square display (480x480)
 WINDOW_NAME = "Skeleton Camera"
-snapshot_counter = 0
 
 # --- Button Area (x1, y1, x2, y2) ---
 button_coords = (DISPLAY_SIZE + 10, 200, DISPLAY_SIZE + BUTTON_WIDTH - 10, 280)
@@ -97,11 +96,8 @@ while True:
 
     if button_clicked:
         plot_img = generate_skeleton_plot(square_frame)
-        filename = f"skeleton_plot_{snapshot_counter}.png"
-        cv2.imwrite(filename, plot_img)
-        snapshot_counter += 1
 
-        # Show result briefly
+        # Just show the result, no saving
         cv2.imshow("Skeleton Plot", plot_img)
         cv2.waitKey(3000)
         cv2.destroyWindow("Skeleton Plot")

@@ -5,6 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import io
 from PIL import Image
+from motor_control import move_to_coordinate
 
 # --- Camera Setup ---
 cap = cv2.VideoCapture(1)
@@ -14,10 +15,11 @@ if not cap.isOpened():
 
 # --- UI Settings ---
 BUTTON_WIDTH = 150
-DISPLAY_SIZE = 480  # Square display (480x480)
+DISPLAY_SIZE = 480
 WINDOW_NAME = "Skeleton Camera"
+snapshot_counter = 0
 
-# --- Button Area (x1, y1, x2, y2) ---
+# --- Button Area ---
 button_coords = (DISPLAY_SIZE + 10, 200, DISPLAY_SIZE + BUTTON_WIDTH - 10, 280)
 button_clicked = False
 
@@ -28,6 +30,9 @@ def mouse_callback(event, x, y, flags, param):
         x1, y1, x2, y2 = button_coords
         if x1 <= x <= x2 and y1 <= y <= y2:
             button_clicked = True
+        else:
+            print(f"Clicked at: ({x}, {y})")
+            move_to_coordinate(x, y)
 
 cv2.namedWindow(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -70,19 +75,16 @@ while True:
     if not ret:
         continue
 
-    # Crop center square
     h, w = frame.shape[:2]
     min_dim = min(h, w)
     cx, cy = w // 2, h // 2
     square_frame = frame[cy - min_dim//2:cy + min_dim//2, cx - min_dim//2:cx + min_dim//2]
     square_frame = cv2.resize(square_frame, (DISPLAY_SIZE, DISPLAY_SIZE))
 
-    # Create canvas: square display + button
     canvas_width = DISPLAY_SIZE + BUTTON_WIDTH
     canvas = np.ones((DISPLAY_SIZE, canvas_width, 3), dtype=np.uint8) * 50
     canvas[:, :DISPLAY_SIZE] = square_frame
 
-    # Draw button
     x1, y1, x2, y2 = button_coords
     cv2.rectangle(canvas, (x1, y1), (x2, y2), (200, 200, 200), -1)
     cv2.putText(canvas, "Snapshot", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_SIMPLEX,
@@ -96,8 +98,10 @@ while True:
 
     if button_clicked:
         plot_img = generate_skeleton_plot(square_frame)
+        filename = f"skeleton_plot_{snapshot_counter}.png"
+        cv2.imwrite(filename, plot_img)
+        snapshot_counter += 1
 
-        # Just show the result, no saving
         cv2.imshow("Skeleton Plot", plot_img)
         cv2.waitKey(3000)
         cv2.destroyWindow("Skeleton Plot")
