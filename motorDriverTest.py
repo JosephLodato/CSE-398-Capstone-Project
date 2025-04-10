@@ -27,10 +27,12 @@ class StepperMotor:
         self.lines.release()
         self.chip.close()
 
-# Initialize motors (Only DIR and STEP pins needed now)
-motorX1 = StepperMotor("gpiochip4", 20, 21, name="X1")
-motorX2 = StepperMotor("gpiochip4", 25, 26, name="X2")
-motorY = StepperMotor("gpiochip4", 5, 6, name="Y")
+
+# Initialize motors with NEW GPIOs
+motorX1 = StepperMotor("gpiochip4", 17, 18, name="X1")  # GPIO17, GPIO18
+motorX2 = StepperMotor("gpiochip4", 22, 23, name="X2")  # GPIO22, GPIO23
+motorY  = StepperMotor("gpiochip4", 24, 25, name="Y")   # GPIO24, GPIO25
+
 
 def moveX(steps, direction, delay=0.001):
     motorX1.set_direction(direction)
