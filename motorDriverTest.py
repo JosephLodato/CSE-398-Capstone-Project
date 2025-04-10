@@ -30,7 +30,7 @@ class StepperMotor:
 
 # Initialize motors with NEW GPIOs
 motorX1 = StepperMotor("gpiochip4", 17, 18, name="X1")  # GPIO17, GPIO18
-motorX2 = StepperMotor("gpiochip4", 22, 23, name="X2")  # GPIO22, GPIO23
+motorX2 = StepperMotor("gpiochip4", 38, 40, name="X2")  # GPIO22, GPIO23
 motorY  = StepperMotor("gpiochip4", 24, 25, name="Y")   # GPIO24, GPIO25
 
 

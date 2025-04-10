@@ -23,7 +23,7 @@ import time
 import gpiod
 
 chip = gpiod.Chip("gpiochip4")
-lines = chip.get_lines([17, 18])  # DIR=17, STEP=18 (Example)
+lines = chip.get_lines([27, 22])  # DIR=17, STEP=18 (Example)
 lines.request(consumer="test", type=gpiod.LINE_REQ_DIR_OUT)
 
 print("Set direction forward")
