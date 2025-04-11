@@ -62,7 +62,7 @@ motorY  = StepperMotor("gpiochip4", 13, 6, name="Y")   # GPIO24, GPIO25
 
 def moveX(steps, direction, delay=0.001):
     motorX1.set_direction(direction)
-    motorX2.set_direction(direction)  # Correctly invert (needs to be either 0 or 1, NOT -1 or 1)
+    motorX2.set_direction(1 - direction)  # Correctly invert (needs to be either 0 or 1, NOT -1 or 1)
     for _ in range(steps):
         motorX1.pulse(delay)
         motorX2.pulse(delay)
@@ -74,7 +74,7 @@ def moveY(steps, direction, delay=0.001):
 
 def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
     motorX1.set_direction(x_dir)
-    motorX2.set_direction(x_dir)  # Invert here too
+    motorX2.set_direction(1 - x_dir)  # Invert here too
     motorY.set_direction(y_dir)
 
 
@@ -100,12 +100,12 @@ def cleanup_all():
     motorY.cleanup()
 
 
-moveX(400, 1)
+moveX(200, 1)
 time.sleep(2.0)
 moveY(400, 1)
 time.sleep(0.5)
-moveY(400, 0)
-time.sleep(1.0)
-moveX(400, 0)
+moveY(400, 1)
+time.sleep(2.0)
+moveX(200, 0)
 
 cleanup_all()
