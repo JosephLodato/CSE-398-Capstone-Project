@@ -58,7 +58,7 @@ class StepperMotor:
 # Initialize motors with NEW GPIOs
 motorX1 = StepperMotor("gpiochip4", 19, 26, name="X1")  # GPIO17, GPIO18
 motorX2 = StepperMotor("gpiochip4", 12, 16, name="X2")  # GPIO22, GPIO23
-motorY  = StepperMotor("gpiochip4", 24, 25, name="Y")   # GPIO24, GPIO25
+motorY  = StepperMotor("gpiochip4", 13, 6, name="Y")   # GPIO24, GPIO25
 
 def moveX(steps, direction, delay=0.001):
     motorX1.set_direction(direction)
