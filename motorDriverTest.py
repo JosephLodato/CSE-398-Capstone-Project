@@ -73,7 +73,7 @@ def cleanup_all():
     motorY.cleanup()
 
 
-moveX(100, 1)
+moveX(200, 1)
 time.sleep(5.0)
-moveX(100, -1)
+moveX(200, 0)
 
