@@ -29,14 +29,14 @@ class StepperMotor:
 
 
 # Initialize motors with NEW GPIOs
-motorX1 = StepperMotor("gpiochip4", 17, 18, name="X1")  # GPIO17, GPIO18
-motorX2 = StepperMotor("gpiochip4", 38, 40, name="X2")  # GPIO22, GPIO23
+motorX1 = StepperMotor("gpiochip4", 19, 26, name="X1")  # GPIO17, GPIO18
+motorX2 = StepperMotor("gpiochip4", 30, 40, name="X2")  # GPIO22, GPIO23
 motorY  = StepperMotor("gpiochip4", 24, 25, name="Y")   # GPIO24, GPIO25
 
 
 def moveX(steps, direction, delay=0.001):
     motorX1.set_direction(direction)
-    motorX2.set_direction(direction)
+    motorX2.set_direction(-direction)
     for _ in range(steps):
         motorX1.pulse(delay)
         motorX2.pulse(delay)
@@ -71,3 +71,11 @@ def cleanup_all():
     motorX1.cleanup()
     motorX2.cleanup()
     motorY.cleanup()
+
+
+moveX(200, 1)
+moveX(200, -1)
+moveX(200, 1)
+moveX(200, 1)
+moveX(200, -1)
+moveX(200, 1)
