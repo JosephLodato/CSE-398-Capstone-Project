@@ -83,6 +83,7 @@ STEPS_PER_PIXEL = 1
 
 def execute_path(contours):
     for contour in contours:
+        time.sleep(2)  # Pause before each new contour line (manual Z adjustment)
         last_x, last_y = contour[0][0]
         for point in contour[1:]:
             x, y = point[0]
