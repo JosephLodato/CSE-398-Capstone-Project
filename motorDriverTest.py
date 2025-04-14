@@ -62,8 +62,7 @@ motorY  = StepperMotor("gpiochip4", 13, 6, name="Y")   # GPIO24, GPIO25
 def moveX(steps, direction, delay=0.001):
     motorX.set_direction(direction)
     for _ in range(steps):
-        motorX1.pulse(delay)
-        motorX2.pulse(delay)
+        motorX.pulse(delay)
 
 def moveY(steps, direction, delay=0.001):
     motorY.set_direction(direction)
@@ -72,7 +71,6 @@ def moveY(steps, direction, delay=0.001):
 
 def cleanup_all():
     motorX1.cleanup()
-    motorX2.cleanup()
     motorY.cleanup()
 
 
