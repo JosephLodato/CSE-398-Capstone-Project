@@ -85,6 +85,15 @@ def process_image(frame):
 # --- Motion Execution ---
 STEPS_PER_PIXEL = 1
 
+def wait_for_key_prompt(window_name, message):
+    prompt_canvas = np.ones((100, 480 + BUTTON_WIDTH, 3), dtype=np.uint8) * 30
+    cv2.putText(prompt_canvas, message, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+    cv2.imshow(window_name, prompt_canvas)
+    while True:
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('n'):
+            break
+
 def execute_path(contours):
     current_x = 0
     current_y = 0
@@ -93,7 +102,6 @@ def execute_path(contours):
         if len(contour) < 2:
             continue
 
-        # Move to first point
         first_x, first_y = contour[0][0]
         dx = first_x - current_x
         dy = first_y - current_y
@@ -101,16 +109,12 @@ def execute_path(contours):
         steps_y = int(abs(dy) * STEPS_PER_PIXEL)
         dir_x = 1 if dx > 0 else 0
         dir_y = 1 if dy > 0 else 0
-        print(f"\n→ Moving to start of contour {i+1} at ({first_x}, {first_y})")
         moveXY(steps_x, dir_x, steps_y, dir_y)
 
         current_x, current_y = first_x, first_y
 
-        # Prompt user to lower pen
-        print(f"🛠️ Lower the pen to start drawing contour {i+1}. Press ENTER to continue...")
-        input()
+        wait_for_key_prompt(WINDOW_NAME, f"⬇️ Lower pen for contour {i+1}, press 'n' to continue")
 
-        # Draw the contour
         last_x, last_y = first_x, first_y
         for point in contour[1:]:
             x, y = point[0]
@@ -124,9 +128,7 @@ def execute_path(contours):
             last_x, last_y = x, y
             current_x, current_y = x, y
 
-        # Prompt user to lift pen
-        print(f"🛑 Lift the pen after drawing contour {i+1}. Press ENTER to continue...")
-        input()
+        wait_for_key_prompt(WINDOW_NAME, f"⬆️ Lift pen after contour {i+1}, press 'n' to continue")
 
 # --- Camera and UI ---
 BUTTON_WIDTH = 150
