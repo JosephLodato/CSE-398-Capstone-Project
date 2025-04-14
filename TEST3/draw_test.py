@@ -9,63 +9,48 @@ import io
 from PIL import Image
 
 # --- Motor Setup ---
-MICROSTEPPING_MODE = "FULL"
-MICROSTEP_CONFIG = {
-    "FULL": [0, 0],
-    "HALF": [1, 0],
-    "1/4": [0, 1],
-    "1/8": [1, 1],
-}
-
 class StepperMotor:
-    def __init__(self, chip_name, dir_pin, step_pin, ms1_pin, ms2_pin, enable_pin, name="Motor"):
+    def __init__(self, chip_name, dir_pin, step_pin, name="Motor"):
         self.chip = gpiod.Chip(chip_name)
-        self.pins = [dir_pin, step_pin, ms1_pin, ms2_pin, enable_pin]
+        self.pins = [dir_pin, step_pin]
         self.lines = self.chip.get_lines(self.pins)
         self.lines.request(consumer="mp6500", type=gpiod.LINE_REQ_DIR_OUT)
         self.name = name
-        self._set_microstepping(MICROSTEPPING_MODE)
-        self.enable()
-
-    def _set_microstepping(self, mode):
-        ms_values = MICROSTEP_CONFIG[mode]
-        self.microstep_values = ms_values
-
-    def enable(self):
-        self.lines.set_values([0, 0, *self.microstep_values, 0])
-
-    def disable(self):
-        self.lines.set_values([0, 0, 0, 0, 1])
 
     def set_direction(self, direction):
         values = self.lines.get_values()
-        values[0] = direction
+        values[0] = direction  # DIR
         self.lines.set_values(values)
 
     def pulse(self, delay=0.001):
         values = self.lines.get_values()
-        values[1] = 1
+        values[1] = 1  # STEP High
         self.lines.set_values(values)
         time.sleep(delay)
-        values[1] = 0
+        values[1] = 0  # STEP Low
         self.lines.set_values(values)
         time.sleep(delay)
 
     def cleanup(self):
-        self.disable()
         self.lines.release()
         self.chip.close()
 
-motorX1 = StepperMotor("gpiochip4", 20, 21, 22, 23, 24, name="X1")
-motorX2 = StepperMotor("gpiochip4", 25, 26, 27, 28, 29, name="X2")
-motorY  = StepperMotor("gpiochip4", 5, 6, 7, 8, 9, name="Y")
+motorX = StepperMotor("gpiochip4", 12, 16, name="X")
+motorY = StepperMotor("gpiochip4", 13, 6, name="Y")
 
+def moveX(steps, direction, delay=0.001):
+    motorX.set_direction(direction)
+    for _ in range(steps):
+        motorX.pulse(delay)
+
+def moveY(steps, direction, delay=0.001):
+    motorY.set_direction(direction)
+    for _ in range(steps):
+        motorY.pulse(delay)
 
 def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
-    motorX1.set_direction(x_dir)
-    motorX2.set_direction(x_dir)
+    motorX.set_direction(x_dir)
     motorY.set_direction(y_dir)
-
     max_steps = max(x_steps, y_steps)
     x_ratio = x_steps / max_steps if x_steps else 0
     y_ratio = y_steps / max_steps if y_steps else 0
@@ -75,16 +60,14 @@ def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
 
     for _ in range(max_steps):
         if x_progress < 1.0:
-            motorX1.pulse(delay)
-            motorX2.pulse(delay)
+            motorX.pulse(delay)
             x_progress += x_ratio
         if y_progress < 1.0:
             motorY.pulse(delay)
             y_progress += y_ratio
 
-def cleanup_motors():
-    motorX1.cleanup()
-    motorX2.cleanup()
+def cleanup_all():
+    motorX.cleanup()
     motorY.cleanup()
 
 # --- Skeleton Processing ---
@@ -93,7 +76,7 @@ def process_image(frame):
     _, binary = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     skeleton = skeletonize(binary > 0).astype(np.uint8) * 255
     contours, _ = cv2.findContours(skeleton, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    return contours
+    return skeleton, contours
 
 # --- Motion Execution ---
 STEPS_PER_PIXEL = 1
@@ -161,11 +144,35 @@ try:
             break
 
         if button_clicked:
-            contours = process_image(square_frame)
+            skeleton, contours = process_image(square_frame)
+
+            # Show contour overlay
+            fig = Figure(figsize=(5, 5), dpi=100)
+            ax = fig.add_subplot(1, 1, 1)
+            for contour in contours:
+                coords = contour.reshape(-1, 2)
+                xs, ys = zip(*coords)
+                ax.plot(xs, ys, marker='.', linestyle='-', linewidth=0.5)
+            ax.set_title("Skeleton Contours")
+            ax.invert_yaxis()
+            ax.axis('equal')
+            ax.grid(True)
+            canvas_plot = FigureCanvas(fig)
+            buf = io.BytesIO()
+            canvas_plot.print_png(buf)
+            buf.seek(0)
+            img_pil = Image.open(buf).convert('RGB')
+            img_np = np.array(img_pil)
+            plot_img = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+            cv2.imshow("Skeleton Plot", plot_img)
+            cv2.waitKey(3000)
+            cv2.destroyWindow("Skeleton Plot")
+
+            # Then move motors
             execute_path(contours)
             button_clicked = False
 
 finally:
     cap.release()
     cv2.destroyAllWindows()
-    cleanup_motors()
+    cleanup_all()
