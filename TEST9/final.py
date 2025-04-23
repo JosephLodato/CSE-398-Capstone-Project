@@ -10,7 +10,7 @@ from PIL import Image
 import RPi.GPIO as GPIO
 
 # --- Motor Setup ---
-GPIO.setmode(GPIO.BCM)
+GPIO.setmode(GPIO.BCM)  # Use BCM numbering
 
 class StepperMotor:
     def __init__(self, dir_pin, step_pin, name="Motor"):
@@ -27,31 +27,38 @@ class StepperMotor:
     def set_direction(self, direction):
         GPIO.output(self.dir_pin, GPIO.HIGH if direction else GPIO.LOW)
 
-    def pulse(self, delay=0.001, steps=100):
-        for _ in range(steps):
-            GPIO.output(self.step_pin, GPIO.HIGH)
-            time.sleep(delay)
-            GPIO.output(self.step_pin, GPIO.LOW)
-            time.sleep(delay)
+    def pulse(self, delay=0.001):
+        GPIO.output(self.step_pin, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(self.step_pin, GPIO.LOW)
+        time.sleep(delay)
 
     def cleanup(self):
         GPIO.output(self.dir_pin, GPIO.LOW)
         GPIO.output(self.step_pin, GPIO.LOW)
-        GPIO.cleanup([self.dir_pin, self.step_pin])
 
-# Initialize motors
 motorX = StepperMotor(12, 16, name="X")
 motorY = StepperMotor(13, 6, name="Y")
-motorZ = StepperMotor(18, 19, name="Z")  # Z-axis motor
+motorZ = StepperMotor(18, 19, name="Z")  
+
+def z_down():
+    motorZ.set_direction(1)  # Down
+    motorZ.pulse(delay=0.007, steps=100)
+
+def z_up():
+    motorZ.set_direction(0)  # Up
+    motorZ.pulse(delay=0.007, steps=100)
 
 def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
     motorX.set_direction(x_dir)
     motorY.set_direction(y_dir)
 
-    x = y = 0
+    x = 0
+    y = 0
     dx = x_steps
     dy = y_steps
-    sx = sy = 1
+    sx = 1
+    sy = 1
 
     if dx > dy:
         err = dx / 2.0
@@ -74,16 +81,6 @@ def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
                 x += sx
                 err += dy
 
-def z_down():
-    motorZ.set_direction(1)  # Down
-    motorZ.pulse(delay=0.007, steps=100)
-    time.sleep(0.5)
-
-def z_up():
-    motorZ.set_direction(0)  # Up
-    motorZ.pulse(delay=0.007, steps=100)
-    time.sleep(0.5)
-
 def cleanup_all():
     motorX.cleanup()
     motorY.cleanup()
@@ -96,10 +93,21 @@ def process_image(frame):
     _, binary = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     skeleton = skeletonize(binary > 0).astype(np.uint8) * 255
     contours, _ = cv2.findContours(skeleton, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    z_down()
+    time.sleep(0.5)
     return skeleton, contours
 
 # --- Motion Execution ---
 STEPS_PER_PIXEL = 1
+
+def wait_for_key_prompt(window_name, message):
+    prompt_canvas = np.ones((100, 480 + BUTTON_WIDTH, 3), dtype=np.uint8) * 30
+    cv2.putText(prompt_canvas, message, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.imshow(window_name, prompt_canvas)
+    while True:
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('n'):
+            break
 
 def execute_path(contours):
     current_x = 0
@@ -120,7 +128,10 @@ def execute_path(contours):
 
         current_x, current_y = first_x, first_y
 
-        z_down()  # Lower pen
+        #wait_for_key_prompt(WINDOW_NAME, f"Lower pen for contour {i+1}, then press 'n' to continue")
+        z_up()
+        time.sleep(0.5)  # small delay to let marker settle
+
 
         for point in contour[1:]:
             x, y = point[0]
@@ -133,7 +144,9 @@ def execute_path(contours):
             moveXY(steps_x, dir_x, steps_y, dir_y)
             current_x, current_y = x, y
 
-        z_up()  # Raise pen
+        #wait_for_key_prompt(WINDOW_NAME, f"Lift pen after contour {i+1}, then press 'n' to continue")
+        z_down()
+        time.sleep(0.5)  # small delay to let marker settle
 
     # Return to origin
     dx = 0 - current_x
@@ -143,6 +156,7 @@ def execute_path(contours):
     dir_x = 1 if dx > 0 else 0
     dir_y = 1 if dy > 0 else 0
     moveXY(steps_x, dir_x, steps_y, dir_y)
+
 
 # --- Camera and UI ---
 BUTTON_WIDTH = 150
@@ -217,6 +231,7 @@ try:
             cv2.waitKey(3000)
             cv2.destroyWindow("Skeleton Plot")
 
+            # Execute motor movement
             execute_path(contours)
             button_clicked = False
 
