@@ -18,6 +18,7 @@ class StepperMotor:
         self.step_pin = step_pin
         self.name = name
 
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.dir_pin, GPIO.OUT)
         GPIO.setup(self.step_pin, GPIO.OUT)
 
@@ -33,13 +34,14 @@ class StepperMotor:
         GPIO.output(self.step_pin, GPIO.LOW)
         time.sleep(delay)
 
-    def pulse(self, delay=0.001, steps=100):
+    def pulseZ(self, delay, steps):
         for _ in range(steps):
             GPIO.output(self.step_pin, GPIO.HIGH)
             time.sleep(delay)
             GPIO.output(self.step_pin, GPIO.LOW)
             time.sleep(delay)
-            
+
+
     def cleanup(self):
         GPIO.output(self.dir_pin, GPIO.LOW)
         GPIO.output(self.step_pin, GPIO.LOW)
@@ -50,11 +52,11 @@ motorZ = StepperMotor(18, 19, name="Z")
 
 def z_down():
     motorZ.set_direction(1)  # Down
-    motorZ.pulse(delay=0.007, steps=100)
+    motorZ.pulseZ(delay=0.007, steps=100)
 
 def z_up():
     motorZ.set_direction(0)  # Up
-    motorZ.pulse(delay=0.007, steps=100)
+    motorZ.pulseZ(delay=0.007, steps=100)
 
 def moveXY(x_steps, x_dir, y_steps, y_dir, delay=0.001):
     motorX.set_direction(x_dir)

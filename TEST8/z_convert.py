@@ -17,7 +17,7 @@ class StepperMotor:
     def set_direction(self, direction):
         GPIO.output(self.dir_pin, GPIO.HIGH if direction else GPIO.LOW)
 
-    def pulse(self, delay=0.001, steps=100):
+    def pulse(self, delay, steps):
         for _ in range(steps):
             GPIO.output(self.step_pin, GPIO.HIGH)
             time.sleep(delay)
