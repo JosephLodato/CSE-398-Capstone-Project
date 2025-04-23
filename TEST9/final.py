@@ -108,8 +108,8 @@ def wait_for_key_prompt(window_name, message):
             break
 
 def execute_path(contours):
-    z_down()
-    time.sleep(0.5)
+    #z_down()
+    #time.sleep(0.5)
     current_x = 0
     current_y = 0
 
