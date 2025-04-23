@@ -33,6 +33,13 @@ class StepperMotor:
         GPIO.output(self.step_pin, GPIO.LOW)
         time.sleep(delay)
 
+    def pulse(self, delay=0.001, steps=100):
+        for _ in range(steps):
+            GPIO.output(self.step_pin, GPIO.HIGH)
+            time.sleep(delay)
+            GPIO.output(self.step_pin, GPIO.LOW)
+            time.sleep(delay)
+            
     def cleanup(self):
         GPIO.output(self.dir_pin, GPIO.LOW)
         GPIO.output(self.step_pin, GPIO.LOW)
