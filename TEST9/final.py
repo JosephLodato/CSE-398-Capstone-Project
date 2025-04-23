@@ -93,8 +93,6 @@ def process_image(frame):
     _, binary = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     skeleton = skeletonize(binary > 0).astype(np.uint8) * 255
     contours, _ = cv2.findContours(skeleton, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    z_down()
-    time.sleep(0.5)
     return skeleton, contours
 
 # --- Motion Execution ---
@@ -110,6 +108,8 @@ def wait_for_key_prompt(window_name, message):
             break
 
 def execute_path(contours):
+    z_down()
+    time.sleep(0.5)
     current_x = 0
     current_y = 0
 
