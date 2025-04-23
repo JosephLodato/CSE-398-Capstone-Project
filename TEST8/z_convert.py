@@ -34,14 +34,14 @@ motorZ = StepperMotor(18, 19, name="Z")
 
 try:
     print("Raising Z axis...")
-    motorZ.set_direction(1)  # Up
-    motorZ.pulse(delay=0.001, steps=200)
+    motorZ.set_direction(1)  # Down
+    motorZ.pulse(delay=0.007, steps=100)
 
     time.sleep(2)
 
     print("Lowering Z axis...")
-    motorZ.set_direction(0)  # Down
-    motorZ.pulse(delay=0.001, steps=200)
+    motorZ.set_direction(0)  # up
+    motorZ.pulse(delay=0.007, steps=100)
 
 finally:
     motorZ.cleanup()
