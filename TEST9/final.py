@@ -105,7 +105,7 @@ def process_image(frame):
     return skeleton, contours
 
 # --- Motion Execution ---
-STEPS_PER_PIXEL = 1
+STEPS_PER_PIXEL = 3
 
 def wait_for_key_prompt(window_name, message):
     prompt_canvas = np.ones((100, 480 + BUTTON_WIDTH, 3), dtype=np.uint8) * 30
